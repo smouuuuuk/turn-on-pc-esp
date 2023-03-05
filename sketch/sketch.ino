@@ -16,8 +16,8 @@ int powerPins[] = {powerButtonPin, resetButtonPin};
 const int buttonNormalPressTime = 500,
           buttonForcePressTime = 5000;
 
-int lastOn = 0,
-    lastOff = 0;
+int lastOn = 0,     // Last time the LED light turned on
+    lastOff = 0;    // Last time the LED light turned off
 
 int statePC = 0;  // 0=Off, 1=On, 2=Sleep
 int prevLightStatus = 0;  // 0=Off, 1=On
