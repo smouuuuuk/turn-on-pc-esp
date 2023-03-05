@@ -6,31 +6,65 @@
 
 ESP8266WebServer server(80);
 
-const int powerButtonPin = 15,
-          resetButtonPin = 13;
+const int powerButtonPin = 13,
+          resetButtonPin = 14,
+          ledInPin = 2,
+          ledOutPin = 4;
 
 int powerPins[] = {powerButtonPin, resetButtonPin};
 
 const int buttonNormalPressTime = 500,
           buttonForcePressTime = 5000;
 
+int lastOn = 0,
+    lastOff = 0;
+
+int statePC = 0;  // 0=Off, 1=On, 2=Sleep
+int prevLightStatus = 0;  // 0=Off, 1=On
+
 int timeToRelease = 0;
-int state = 0;  // 0=Nothing, 1=Power On/Off/Reset, 2=Reboot
+int currentButtonPressed = 0;  // 0=Nothing, 1=Power On/Off/Force, 2=Reboot
 
 void pressPowerButton(int time){
-  digitalWrite(powerPins[state-1], HIGH);
+  digitalWrite(powerPins[currentButtonPressed-1], HIGH);
   timeToRelease = millis() + time;
 }
 
 void pressResetButton(int time){
-  digitalWrite(powerPins[state-1], HIGH);
+  digitalWrite(powerPins[currentButtonPressed-1], HIGH);
   timeToRelease = millis() + time;
 }
 
 void checkIfNeedToRelease(){
-  if (state && millis() >= timeToRelease){
-    digitalWrite(powerPins[state - 1], LOW);
-    state = 0;
+  if (currentButtonPressed && millis() >= timeToRelease){
+    digitalWrite(powerPins[currentButtonPressed - 1], LOW);
+    currentButtonPressed = 0;
+  }
+}
+
+void checkLEDPowerLight(){
+  int stateLED = !digitalRead(ledInPin);
+  digitalWrite (ledOutPin, stateLED);
+  if (stateLED && !prevLightStatus){
+    lastOn = millis();
+  } else if (!stateLED && prevLightStatus) {
+    lastOff = millis();
+  }
+  prevLightStatus = stateLED;
+  checkStatusChange(stateLED);
+}
+
+void checkStatusChange(int stateLED){
+  if(lastOn != 0 && lastOff != 0){
+    if((millis() < lastOn + 4000) && (millis() < lastOff + 4000)){
+      statePC = 2;
+      return;
+    }
+  }
+  if(stateLED){
+    statePC = 1;
+  } else {
+    statePC = 0;
   }
 }
 
@@ -42,8 +76,8 @@ void handleRoot(){
 
 void handleOnOff(){
   server.sendHeader("Location", String("/"), true);
-  if (!state){
-    state = 1;
+  if (!currentButtonPressed){
+    currentButtonPressed = 1;
     pressPowerButton(buttonNormalPressTime);
   }
   server.send ( 302, "text/plain", "");
@@ -51,8 +85,8 @@ void handleOnOff(){
 
 void handleReboot(){
   server.sendHeader("Location", String("/"), true);
-  if (!state){
-    state = 2;
+  if (!currentButtonPressed){
+    currentButtonPressed = 2;
     pressResetButton(buttonNormalPressTime);
   }
   server.send ( 302, "text/plain", "");
@@ -60,8 +94,8 @@ void handleReboot(){
 
 void handleForce(){
   server.sendHeader("Location", String("/"), true);
-  if (!state){
-    state = 1;
+  if (!currentButtonPressed){
+    currentButtonPressed = 1;
     pressPowerButton(buttonForcePressTime);
   }
   server.send ( 302, "text/plain", "");
@@ -75,6 +109,10 @@ void setup(){
     pinMode(powerPins[i], OUTPUT);
     digitalWrite(powerPins[i], LOW);
   }
+
+  pinMode(ledOutPin, OUTPUT);
+  digitalWrite(ledOutPin, LOW);
+  pinMode(ledInPin, INPUT_PULLUP);
   
   WiFi.mode(WIFI_STA);
   WiFi.begin(SECRET_SSID, SECRET_PWD);
@@ -102,5 +140,6 @@ void setup(){
 
 void loop(){
   checkIfNeedToRelease();
+  checkLEDPowerLight();
   server.handleClient();
 }
