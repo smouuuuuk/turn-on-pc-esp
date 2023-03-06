@@ -8,8 +8,11 @@ ESP8266WebServer server(80);
 
 const int powerButtonPin = 13,
           resetButtonPin = 14,
-          ledInPin = 2,
+          ledHighPin = 0,
+          ledInPin = 5,
           ledOutPin = 4;
+
+int timeToRead = 0;       
 
 int powerPins[] = {powerButtonPin, resetButtonPin};
 
@@ -43,7 +46,11 @@ void checkIfNeedToRelease(){
 }
 
 void checkLEDPowerLight(){
-  int stateLED = !digitalRead(ledInPin);
+  int stateLED = digitalRead(ledInPin);
+  if (millis() >= timeToRead){
+    Serial.println(stateLED);
+    timeToRead += 500;
+  }
   digitalWrite (ledOutPin, stateLED);
   if (stateLED && !prevLightStatus){
     lastOn = millis();
@@ -109,10 +116,10 @@ void setup(){
     pinMode(powerPins[i], OUTPUT);
     digitalWrite(powerPins[i], LOW);
   }
-
+  
   pinMode(ledOutPin, OUTPUT);
   digitalWrite(ledOutPin, LOW);
-  pinMode(ledInPin, INPUT_PULLUP);
+  pinMode(ledInPin, INPUT);
   
   WiFi.mode(WIFI_STA);
   WiFi.begin(SECRET_SSID, SECRET_PWD);
@@ -136,6 +143,9 @@ void setup(){
   server.on("/force", handleForce);
   // server.onNotFound(handleNotFound);
   server.begin();
+
+  pinMode(ledHighPin, OUTPUT);
+  digitalWrite(ledHighPin, HIGH);
 }
 
 void loop(){
