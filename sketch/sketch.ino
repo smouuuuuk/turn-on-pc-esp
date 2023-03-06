@@ -28,6 +28,8 @@ int currentButtonPressed = 0;  // 0=Nothing, 1=Power On/Off/Force, 2=Reboot
 
 const String stateColors[] = {"#f03131", "#5cdf28", "#3743f0"};
 
+String authFailResponse = "Authentication Failed";
+
 void pressPowerButton(int time){
   digitalWrite(powerPins[currentButtonPressed-1], HIGH);
   timeToRelease = millis() + time;
@@ -138,7 +140,12 @@ void setup(){
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
-  server.on("/", handleRoot);
+  server.on("/", []() {
+    if (!server.authenticate(SECRET_LOGIN, SECRET_PASS)){
+      return server.requestAuthentication(DIGEST_AUTH, SECRET_REALM, authFailResponse);
+    }
+    handleRoot();
+  });
   server.on("/onoff", handleOnOff);
   server.on("/reboot", handleReboot);
   server.on("/force", handleForce);
