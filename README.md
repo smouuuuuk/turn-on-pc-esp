@@ -40,4 +40,4 @@ A diagram of the circuit can be seen here:
 
 ### Insert image of the diagram
 
-I've also made a custom PCB and 3D case to enclose everything inside it. The files can be downloaded [here](http://proyectosclase.duckdns.org).
+I've also made a custom PCB and a simple 3D case to enclose everything inside it. Feel free to tweak them however you like!
