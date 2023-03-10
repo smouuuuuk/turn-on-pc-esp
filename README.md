@@ -38,6 +38,6 @@ The pins I used are the following:
 
 A diagram of the circuit can be seen here:
 
-### Insert image of the diagram
+![Final-Schematic](https://user-images.githubusercontent.com/94694675/224386601-a2ec97a3-3545-45e9-a5fb-aa6b1996e648.png)
 
 I've also made a custom PCB and a simple 3D case to enclose everything inside it. Feel free to tweak them however you like!
