@@ -22,8 +22,6 @@ I plugged it into one of the GPIO pins and it didn't work, it did work on the 3.
 
 After this I decided to use Optocouplers, these components are typically used in low power applications, and due to their non-mechanical nature they're usually longer lasting than a relay. Searching for one that would fit my requirements I ended up getting a few 4N25, which is able to operate with those 12mA coming from the GPIO pins.
 
-### Insert small explanation about how optocuplers work
-
 For the power/reset pins I connect one of the GPIO pins to the input of the 4N25 and the other to GND. At the output I connect both cables that go to the motherboard pins. When I pull the GPIO pin to HIGH and current flows through the optocoupler both ends at the output are connected thus creating a shortcircuit, emulating a button press.
 
 The principle for reading the state of the Power LED is the same but the other way around, the LED pins from the motherboard are the ones activating or deactivating the 4N25 and at the output of the IC I hava the 3.3V pin connected to one of the outputs of the IC and an Input pin from the ESP8266 at the other output, this way it knows when the LED light is ON or OFF.
