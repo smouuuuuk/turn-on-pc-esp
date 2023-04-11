@@ -6,16 +6,18 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
+#include <ESP8266HTTPClient.h>
 
 #include "secrets.h"            // files with credentials, the following variables are taken from the secrets.h file:
                                 // SECRET_SSID  - SSID from the AP used to connect to the Internet
                                 // SECRET_PWD   - Password to access the network
                                 // SECRET_REALM - 
-                                // SECRET_USER  - User to authenticate in the WebServer
+                                // SECRET_LOGIN  - User to authenticate in the WebServer
                                 // SECRET_PASS  - Password to authenticate in the WebServer
 
 ESP8266WebServer server(80);    // WebServer will be hosted on port 80
 
+WiFiClient wifiClient;
 
 const int powerButtonPin = 13,  // pins needed for the project
           resetButtonPin = 14,
@@ -38,6 +40,10 @@ int prevLightStatus = 0;       // 0=Off, 1=On, not the immediate value of the LE
 
 int timeToRelease = 0;         // time at which the currently pressed button will have to be released
 int currentButtonPressed = 0;  // 0=Nothing, 1=Power On/Off/Force, 2=Reboot
+
+String currentPublicIP = "";
+const int waitTimeCheckIP = 4 * 3600 * 1000;  // will send and API request every 4 hours
+int timeToCheckPublicIP = 0;   // time at which the API request will be sent
 
 /**
  * "Presses" the button by putting the pin assigned to the power button to its HIGH state
@@ -178,6 +184,23 @@ void handleNotFound(){
   server.send ( 302, "text/plain", "");
 }
 
+void checkIfNeedToCheckIP() {
+  if (millis() >= timeToCheckPublicIP){
+    HTTPClient http;
+    http.begin(wifiClient, "https://api.ipify.org");
+    int httpCode = http.GET();
+    if (httpCode > 0) {
+      String payload = http.getString();
+      Serial.println(payload);
+      if (payload != currentPublicIP){
+        currentPublicIP = payload;
+    }
+    http.end();
+    }
+    timeToCheckPublicIP += waitTimeCheckIP;
+  }
+}
+
 void setup(){
   Serial.begin(115200);
   Serial.println("");
@@ -229,5 +252,6 @@ void setup(){
 void loop(){
   checkIfNeedToRelease();
   checkLEDPowerLight();
+  checkIfNeedToCheckIP();
   server.handleClient();
 }
