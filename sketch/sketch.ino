@@ -7,6 +7,7 @@
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPClient.h>
+#include <ESP_Mail_Client.h>
 
 #include "secrets.h"            // files with credentials, the following variables are taken from the secrets.h file:
                                 // SECRET_SSID  - SSID from the AP used to connect to the Internet
@@ -18,6 +19,8 @@
 ESP8266WebServer server(80);    // WebServer will be hosted on port 80
 
 WiFiClient wifiClient;
+
+SMTPSession smtp;
 
 const int powerButtonPin = 13,  // pins needed for the project
           resetButtonPin = 14,
@@ -194,11 +197,34 @@ void checkIfNeedToCheckIP() {
       Serial.println(payload);
       if (payload != currentPublicIP){
         currentPublicIP = payload;
+        notifyPublicIPChange(currentPublicIP);
     }
     http.end();
     }
     timeToCheckPublicIP += waitTimeCheckIP;
   }
+}
+
+void notifyPublicIPChange (String newIP){
+  ESP_Mail_Session session;
+  session.server.host_name = "smtp.gmail.com" ;
+  session.server.port = 465;
+  session.login.email = SECRET_EMAIL_SENDER;
+  session.login.password = SECRET_APP_PASS;
+  session.login.user_domain = "";
+  
+  SMTP_Message message;
+  message.sender.name = "ESP8266";
+  message.sender.email = SECRET_EMAIL_SENDER;
+  message.subject = "ESP8266 Testing Email";
+  message.addRecipient("Receiver",SECRET_EMAIL_RECIPIENT);
+  String textMsg = newIP;
+  message.text.content = textMsg.c_str();
+  message.text.charSet = "us-ascii";
+  message.text.transfer_encoding = Content_Transfer_Encoding::enc_7bit;
+
+  if (!smtp.connect(&session)) return;
+  if (!MailClient.sendMail(&smtp, &message)) Serial.println("Error sending Email, " + smtp.errorReason());
 }
 
 void setup(){
